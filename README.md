@@ -1,110 +1,120 @@
 # 🎤 Mock Interview AI
 
-> AI 기반 모의 면접 연습 플랫폼 — 음성 답변 분석 및 실시간 피드백
+음성으로 답하는 AI 모의 면접 플랫폼
 
-**🚧 현재 개발 중입니다** (2026.04 시작)
-
----
-
-## 프로젝트 개요
-
-채용공고와 이력서를 기반으로 맞춤형 면접 질문을 생성하고, 사용자의 음성 답변을 분석해 즉각적인 피드백을 제공하는 AI 면접 코치입니다.
-
-[Job Agent v3](https://github.com/HyeonBin0118/job-agent-v3)의 면접 질문 생성 기능을 독립 서비스로 발전시켜, 실제 면접 연습이 가능한 플랫폼으로 확장했습니다.
+> 2026년 4월부터 작업 중. 아직 코드는 비어있고 설계 단계입니다.
 
 ---
 
-## 주요 기능 (예정)
+## 시작 배경
+
+이전에 만든 [Job Agent v3](https://github.com/HyeonBin0118/job-agent-v3)에 면접 질문 생성 기능을 붙였는데, 막상 만들고 보니 **질문을 받기만 하고 답해볼 수단이 없다**는 게 가장 아쉬웠습니다. 텍스트로 답을 적는 건 실제 면접과 너무 다르고, 혼자 소리 내서 말해봐도 잘 했는지 알 길이 없었습니다.
+
+그래서 이번엔 그 부분만 떼어내서 제대로 만들어보려 합니다. 질문 생성에서 끝나지 않고 **음성으로 답하면 그 답을 평가받는** 흐름까지 가는 게 목표입니다.
+
+겸사겸사 그동안 미뤄두던 것들도 이번 프로젝트에서 다 해보려 합니다:
+
+- Streamlit 말고 FastAPI로 백엔드 분리해보기
+- PostgreSQL 붙여서 연습 기록 쌓기
+- Docker Compose로 멀티 컨테이너 환경 구성
+- 음성 처리 (Whisper, TTS) 직접 연동
+
+---
+
+## 만들고 싶은 것
 
 ### 1. 맞춤형 질문 생성
-- 채용공고 URL + 이력서 PDF 입력
-- GPT 기반 개인화 면접 질문 생성 (보유/부족 스킬, 직무, 인성)
+공고 URL과 이력서를 넣으면 그 사람한테 맞는 면접 질문을 뽑아줍니다. 이건 v3에서 이미 한 번 해본 기능이라 포팅하는 정도가 될 것 같습니다.
 
 ### 2. 음성 면접 모드
-- 질문을 TTS로 음성 재생
-- 사용자 답변 녹음
-- Whisper API로 음성 → 텍스트 변환
-- GPT가 답변 평가 (논리성, 구체성, 시간 관리)
+- 질문을 TTS로 읽어줌 (실제 면접관이 묻는 느낌)
+- 답변을 마이크로 녹음
+- Whisper로 텍스트 변환
+- GPT가 답변을 평가 — 논리성, 구체성, 답변 길이/시간
+
+여기가 이번 프로젝트의 핵심입니다.
 
 ### 3. 연습 히스토리
-- 반복 연습 기록 저장
-- 답변 개선 추이 시각화
+같은 질문을 여러 번 답하면서 점수가 어떻게 변했는지 보고 싶었습니다. 이력서 별로, 질문 별로 기록을 쌓아두고 나중에 다시 볼 수 있게.
 
 ---
 
-## 기술 스택
+## 기술 스택 (계획)
 
-| 분류 | 기술 |
-|---|---|
-| Backend | FastAPI, Python 3.11 |
-| Database | PostgreSQL (SQLAlchemy ORM) |
-| Cache | Redis |
-| AI | OpenAI GPT-4o-mini, Whisper API |
-| 음성 처리 | TTS (OpenAI) |
-| Container | Docker, Docker Compose |
-| Frontend (예정) | HTML/JS 또는 Streamlit |
+| 분류 | 기술 | 이유 |
+|---|---|---|
+| Backend | FastAPI | 비동기 처리, OpenAPI 문서 자동 생성 |
+| DB | PostgreSQL + SQLAlchemy | 연습 기록 영구 저장 |
+| Cache | Redis | 세션 관리, API 호출 캐싱 |
+| AI | GPT-4o-mini, Whisper, TTS | OpenAI API 통합 |
+| Container | Docker Compose | 로컬 개발 환경 통일 |
+| Frontend | 미정 | 녹음 UI 가능한 최소한으로 |
+
+프론트엔드는 일단 백엔드부터 다 만들고 나서 결정할 생각입니다. 간단한 HTML+JS로 갈지, Streamlit으로 빠르게 끝낼지는 그때 가서.
 
 ---
 
-## 아키텍처
+## 아키텍처 스케치
 
 ```
 ┌─────────────────┐
-│   Frontend      │  ← 녹음 UI (개발 예정)
+│   Frontend      │  녹음 UI
 └────────┬────────┘
-         │
+         │ HTTP / WebSocket
 ┌────────▼────────────────┐
-│   FastAPI Backend       │
-│  - 질문 생성            │
-│  - 음성 처리            │
-│  - 답변 평가            │
+│   FastAPI               │
+│  ─ 질문 생성             │
+│  ─ 음성 업로드/변환      │
+│  ─ 답변 평가             │
 └───┬──────────┬──────────┘
     │          │
 ┌───▼───┐  ┌──▼─────┐
 │ Redis │  │Postgres│
-│(세션) │  │(히스토리)│
+│ 세션   │  │ 히스토리│
 └───────┘  └────────┘
 ```
 
----
-
-## 개발 계획
-
-### Phase 1: 기본 API (예정)
-- [ ] FastAPI 프로젝트 구조 설정
-- [ ] Docker Compose (API + DB + Redis)
-- [ ] 질문 생성 API (`POST /generate-questions`)
-- [ ] PostgreSQL 연결 및 모델 정의
-
-### Phase 2: 음성 처리 (예정)
-- [ ] 음성 업로드 → Whisper 변환
-- [ ] GPT 답변 평가 로직
-- [ ] Redis 세션 관리
-- [ ] 피드백 API (`POST /submit-answer`, `GET /feedback`)
-
-### Phase 3: 프론트엔드 데모 (예정)
-- [ ] 녹음 UI
-- [ ] 결과 표시
-
-### Phase 4: 완성 (예정)
-- [ ] 히스토리 조회 API
-- [ ] README 작성
-- [ ] 배포
+WebSocket을 쓸지 일반 REST로만 갈지 아직 고민 중입니다. 실시간 스트리밍이 정말 필요한지 한 번 더 생각해봐야 할 것 같습니다.
 
 ---
 
-## 설치 및 실행
+## 진행 계획
 
-> 🚧 개발 중 — 추후 업데이트 예정
+대략적인 순서이고 진행하면서 바뀔 수 있습니다.
+
+**1주차 — 뼈대 세우기**
+FastAPI 프로젝트 구조 잡고, Docker Compose로 API/DB/Redis 띄우기. v3에서 쓰던 질문 생성 로직 가져와서 `POST /generate-questions` 동작하게 만들기. SQLAlchemy 모델 정의하고 마이그레이션 환경(Alembic) 세팅.
+
+**2주차 — 음성 파이프라인**
+음성 파일 업로드받아서 Whisper로 변환하고 GPT 평가까지 한 번에 돌아가게 만들기. 이게 가장 손이 많이 갈 것 같음. 답변 평가 프롬프트 설계도 여기서 같이.
+
+**3주차 — UI와 마무리**
+프론트엔드 데모 붙이고 히스토리 조회 API 추가. README 정리하고 가능하면 배포까지.
+
+---
+
+## 예상되는 어려움
+
+미리 예상해두는 것들. 부딪히면서 README에 추가할 예정.
+
+- 음성 녹음을 브라우저에서 받아서 서버로 보내는 것 — 코덱, 포맷 문제가 있을 것 같음
+- Whisper 응답 시간 — 짧은 답변도 몇 초 걸릴 텐데 사용자 경험을 어떻게 가져갈지
+- 답변 "평가"의 객관성 — v3에서 GPT 자체 평가의 한계를 이미 한 번 겪음. 이번엔 어떻게 풀지
 
 ---
 
 ## 관련 프로젝트
 
-- [Job Agent v3](https://github.com/HyeonBin0118/job-agent-v3) — 채용공고 분석 및 자소서 생성
+전작들. 이 프로젝트는 v3의 면접 질문 기능에서 출발했습니다.
+
+- [Job Agent v3](https://github.com/HyeonBin0118/job-agent-v3) — 공고 분석 + 매칭 + 자소서 + 면접 질문
 - [Job Agent v2](https://github.com/HyeonBin0118/job-agent-v2)
-- [Job Agent_v1](https://github.com/HyeonBin0118/job-agent)
+- [Job Agent v1](https://github.com/HyeonBin0118/job-agent)
+- [ShopAI](https://github.com/HyeonBin0118/shopping-rag-final) — RAG 기반 쇼핑몰 챗봇
+
+도메인 조사 차원에서 본 비슷한 오픈소스:
+- [Liftoff](https://github.com/Tameyer41/liftoff) — Next.js + Whisper + GPT로 만든 모의 면접 시뮬레이터. 프론트엔드 중심이라 백엔드 구조 참고용은 아니지만 UI/UX는 깔끔합니다.
 
 ---
 
-**License**: MIT
+License: MIT
