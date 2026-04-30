@@ -6,6 +6,7 @@ from openai import OpenAI
 from sqlalchemy.orm import Session
 from app.core.config import settings
 from app import models
+from app.services.cache import get_cached_job, set_cached_job
 
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
@@ -103,13 +104,18 @@ JSON만 반환해.
 
 
 def create_session(db: Session, job_url: str, resume_text: str) -> models.InterviewSession:
-    # 1. 공고 크롤링 + 분석
-    job_content = crawl_job_posting(job_url)
-    job_info = extract_job_info(job_content)
+    # 1. 캐시 확인 → 없으면 크롤링
+    job_info = get_cached_job(job_url)
+    if job_info:
+        print(f"[CACHE HIT] {job_url}")
+    else:
+        print(f"[CACHE MISS] {job_url}")
+        job_content = crawl_job_posting(job_url)
+        job_info = extract_job_info(job_content)
+        set_cached_job(job_url, job_info)
 
     # 2. 이력서 매칭
     match_result = match_resume(resume_text, job_info)
-
     # 3. 면접 질문 생성
     questions_data = generate_questions(resume_text, job_info, match_result)
 
