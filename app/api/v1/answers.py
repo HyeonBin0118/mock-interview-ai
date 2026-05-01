@@ -1,0 +1,117 @@
+import os
+import time
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app import models
+from app.services.evaluation import transcribe_audio, evaluate_answer
+
+router = APIRouter()
+
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
+@router.post("/questions/{question_id}/answers")
+def submit_answer(
+    question_id: int,
+    audio: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    # 질문 존재 확인
+    question = db.query(models.Question).filter(
+        models.Question.id == question_id
+    ).first()
+    if not question:
+        raise HTTPException(status_code=404, detail="Question not found")
+
+    # 음성 파일 저장
+    file_path = f"{UPLOAD_DIR}/{question_id}_{int(time.time())}_{audio.filename}"
+    with open(file_path, "wb") as f:
+        f.write(audio.file.read())
+
+    # Whisper로 텍스트 변환
+    try:
+        answer_text = transcribe_audio(file_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Whisper 변환 실패: {e}")
+
+    # 답변 시간 계산 (파일 크기 기반 추정 — 실제 음성 길이는 Phase 3에서 정확히 측정)
+    file_size = os.path.getsize(file_path)
+    duration_seconds = file_size / 16000  # 대략적인 추정
+
+    # DB 저장
+    answer = models.Answer(
+        question_id=question_id,
+        answer_text=answer_text,
+        audio_path=file_path,
+        duration_seconds=duration_seconds,
+    )
+    db.add(answer)
+    db.commit()
+    db.refresh(answer)
+
+    return {
+        "answer_id": answer.id,
+        "question_id": question_id,
+        "answer_text": answer_text,
+        "duration_seconds": duration_seconds,
+    }
+
+
+@router.get("/answers/{answer_id}/feedback")
+def get_feedback(answer_id: int, db: Session = Depends(get_db)):
+    answer = db.query(models.Answer).filter(
+        models.Answer.id == answer_id
+    ).first()
+    if not answer:
+        raise HTTPException(status_code=404, detail="Answer not found")
+
+    # 이미 평가된 경우 바로 반환
+    if answer.evaluation:
+        ev = answer.evaluation
+        return {
+            "answer_id": answer_id,
+            "answer_text": answer.answer_text,
+            "logic_score": ev.logic_score,
+            "specificity_score": ev.specificity_score,
+            "time_score": ev.time_score,
+            "total_score": ev.total_score,
+            "feedback": ev.feedback,
+        }
+
+    # GPT 평가 실행
+    question = db.query(models.Question).filter(
+        models.Question.id == answer.question_id
+    ).first()
+
+    try:
+        result = evaluate_answer(
+            question_text=question.question_text,
+            answer_text=answer.answer_text,
+            duration_seconds=answer.duration_seconds or 60,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"평가 실패: {e}")
+
+    # 평가 결과 DB 저장
+    evaluation = models.EvaluationResult(
+        answer_id=answer_id,
+        logic_score=result.get("logic_score"),
+        specificity_score=result.get("specificity_score"),
+        time_score=result.get("time_score"),
+        total_score=result.get("total_score"),
+        feedback=result.get("feedback"),
+    )
+    db.add(evaluation)
+    db.commit()
+
+    return {
+        "answer_id": answer_id,
+        "answer_text": answer.answer_text,
+        "logic_score": result.get("logic_score"),
+        "specificity_score": result.get("specificity_score"),
+        "time_score": result.get("time_score"),
+        "total_score": result.get("total_score"),
+        "feedback": result.get("feedback"),
+    }

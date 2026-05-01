@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.api.v1 import sessions
-
+from app.api.v1 import answers
 app = FastAPI(
     title="Mock Interview AI",
     description="음성 답변 기반 AI 모의 면접 플랫폼",
@@ -8,7 +8,7 @@ app = FastAPI(
 )
 
 app.include_router(sessions.router, prefix="/api/v1", tags=["sessions"])
-
+app.include_router(answers.router, prefix="/api/v1", tags=["answers"])
 
 @app.get("/")
 def root():
