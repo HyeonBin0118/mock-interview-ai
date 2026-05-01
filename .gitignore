@@ -25,3 +25,10 @@ Thumbs.db
 # Project
 uploads/
 *.log
+
+test_answer.mp3
+uploads/
+*.mp3
+*.wav
+*.webm
+*.m4a

@@ -265,6 +265,15 @@
                 <button class="record-btn btn-danger" id="recordBtn" onclick="toggleRecord()">🎙️</button>
                 <br>
                 <p class="status" id="recordStatus">버튼을 눌러 답변 녹음을 시작하세요</p>
+                <div style="margin-top:20px; border-top:1px solid #2a2d3a; padding-top:20px; text-align:left;">
+                    <label style="font-size:0.85rem; color:#888; display:block; margin-bottom:6px;">📁 또는 녹음 파일 직접 업로드
+                        (mp3, wav, m4a)</label>
+                    <input type="file" id="audioFile" accept="audio/*"
+                        style="width:100%; background:#0f1117; border:1px solid #2a2d3a; border-radius:8px; padding:10px; color:#e0e0e0; font-size:0.85rem;">
+                    <button class="btn-success" style="margin-top:10px; width:100%;" onclick="submitFileAnswer()">파일로
+                        제출</button>
+                </div>
+
             </div>
 
             <div class="nav-btns">
@@ -489,6 +498,32 @@
             currentIdx++;
             document.getElementById('feedbackCard').classList.add('hidden');
             showQuestion();
+        }
+        async function submitFileAnswer() {
+            const fileInput = document.getElementById('audioFile');
+            if (!fileInput.files[0]) {
+                alert('파일을 선택해주세요');
+                return;
+            }
+            document.getElementById('recordStatus').textContent = '분석 중...';
+
+            const formData = new FormData();
+            formData.append('audio', fileInput.files[0]);
+
+            try {
+                const q = questions[currentIdx];
+                const res = await fetch(`${API}/questions/${q.id}/answers`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+
+                const feedbackRes = await fetch(`${API}/answers/${data.answer_id}/feedback`);
+                const feedback = await feedbackRes.json();
+                showFeedback(feedback);
+            } catch (e) {
+                document.getElementById('recordStatus').textContent = '오류: ' + e.message;
+            }
         }
     </script>
 </body>
