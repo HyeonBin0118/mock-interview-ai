@@ -281,11 +281,10 @@ InterviewSession  ->  Question  ->  Answer  ->  EvaluationResult
 
 ### 향후 개선
 - WebSocket 기반 실시간 답변 분석
-- 사용자별 진행도 대시보드 (반복 연습 추이 시각화)
 - 답변 평가 모델 다양화 (사람 평가 또는 다른 모델과의 교차 평가)
 
 ---
-
+```
 ## 프로젝트 구조
 mock-interview-ai/
 ├── app/
@@ -310,7 +309,7 @@ mock-interview-ai/
 ├── generate_test_audio.py    # 테스트용 음성 파일 생성 스크립트
 ├── docker-compose.yml
 └── requirements.txt
-
+```
 
 ---
 
