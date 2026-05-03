@@ -1,6 +1,7 @@
 import httpx
 import json
 import re
+import time
 from bs4 import BeautifulSoup
 from openai import OpenAI
 from sqlalchemy.orm import Session
@@ -104,20 +105,38 @@ JSON만 반환해.
 
 
 def create_session(db: Session, job_url: str, resume_text: str) -> models.InterviewSession:
+    total_start = time.time()
+
     # 1. 캐시 확인 → 없으면 크롤링
     job_info = get_cached_job(job_url)
     if job_info:
         print(f"[CACHE HIT] {job_url}")
+        job_info_time = 0.0
     else:
         print(f"[CACHE MISS] {job_url}")
+        t = time.time()
         job_content = crawl_job_posting(job_url)
         job_info = extract_job_info(job_content)
         set_cached_job(job_url, job_info)
+        job_info_time = time.time() - t
 
     # 2. 이력서 매칭
+    t = time.time()
     match_result = match_resume(resume_text, job_info)
+    match_time = time.time() - t
+
     # 3. 면접 질문 생성
+    t = time.time()
     questions_data = generate_questions(resume_text, job_info, match_result)
+    question_time = time.time() - t
+
+    total_time = time.time() - total_start
+
+    if job_info_time > 0:
+        print(f"[TIMING] 크롤링+공고분석: {job_info_time*1000:.0f}ms")
+    print(f"[TIMING] 이력서 매칭: {match_time*1000:.0f}ms")
+    print(f"[TIMING] 질문 생성: {question_time*1000:.0f}ms")
+    print(f"[TIMING] 전체 응답시간: {total_time*1000:.0f}ms")
 
     # 4. DB 저장
     session = models.InterviewSession(
