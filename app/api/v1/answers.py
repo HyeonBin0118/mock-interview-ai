@@ -115,3 +115,34 @@ def get_feedback(answer_id: int, db: Session = Depends(get_db)):
         "total_score": result.get("total_score"),
         "feedback": result.get("feedback"),
     }
+from pydantic import BaseModel
+
+class EvaluateTextRequest(BaseModel):
+    question_id: int
+    answer_text: str
+    duration_seconds: float = 60.0
+
+@router.post("/evaluate-text")
+def evaluate_text(body: EvaluateTextRequest, db: Session = Depends(get_db)):
+    question = db.query(models.Question).filter(
+        models.Question.id == body.question_id
+    ).first()
+    if not question:
+        raise HTTPException(status_code=404, detail="Question not found")
+    try:
+        result = evaluate_answer(
+            question_text=question.question_text,
+            answer_text=body.answer_text,
+            duration_seconds=body.duration_seconds,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return {
+        "answer_text": body.answer_text,
+        "logic_score": result.get("logic_score"),
+        "specificity_score": result.get("specificity_score"),
+        "time_score": result.get("time_score"),
+        "total_score": result.get("total_score"),
+        "feedback": result.get("feedback"),
+    }

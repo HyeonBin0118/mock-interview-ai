@@ -97,6 +97,19 @@
             color: #fff;
         }
 
+        .btn-ghost {
+            background: transparent;
+            color: #888;
+            border: 1px solid #2a2d3a;
+            font-size: 0.85rem;
+            padding: 6px 14px;
+        }
+
+        .btn-ghost:hover {
+            color: #e0e0e0;
+            border-color: #4f6ef7;
+        }
+
         .question-box {
             background: #0f1117;
             border-left: 3px solid #4f6ef7;
@@ -115,29 +128,55 @@
             margin-bottom: 8px;
         }
 
-        .보유\ 스킬 {
-            background: #1a3a1a;
-            color: #2ecc71;
+        .input-options {
+            display: flex;
+            gap: 16px;
+            margin-top: 8px;
         }
 
-        .부족\ 스킬 {
-            background: #3a1a1a;
-            color: #e74c3c;
+        .option-btn {
+            flex: 1;
+            padding: 20px;
+            background: #0f1117;
+            border: 2px solid #2a2d3a;
+            border-radius: 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: border-color 0.2s, background 0.2s;
         }
 
-        .직무\/회사 {
-            background: #1a1a3a;
-            color: #4f6ef7;
+        .option-btn:hover {
+            border-color: #4f6ef7;
+            background: #141722;
         }
 
-        .인성\/경험 {
-            background: #3a3a1a;
-            color: #f39c12;
+        .option-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .option-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #e0e0e0;
+        }
+
+        .option-desc {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .back-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
         }
 
         .record-section {
             text-align: center;
-            padding: 20px 0;
+            padding: 12px 0;
         }
 
         .record-btn {
@@ -145,7 +184,7 @@
             height: 80px;
             border-radius: 50%;
             font-size: 2rem;
-            margin-bottom: 12px;
+            margin: 12px 0;
         }
 
         .recording {
@@ -169,7 +208,55 @@
         .timer {
             font-size: 1.5rem;
             color: #e74c3c;
-            margin-bottom: 12px;
+            margin-bottom: 4px;
+        }
+
+        #visualizer {
+            width: 100%;
+            height: 60px;
+            border-radius: 8px;
+            margin: 8px 0;
+            display: block;
+        }
+
+        .transcript-box {
+            background: #0f1117;
+            border: 1px solid #2a2d3a;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 12px 0;
+        }
+
+        .transcript-label {
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 6px;
+        }
+
+        #transcriptText {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: #e0e0e0;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            resize: vertical;
+            min-height: 80px;
+            outline: none;
+        }
+
+        .duration-badge {
+            display: inline-block;
+            background: #1a2a3a;
+            color: #4f9ef7;
+            border-radius: 6px;
+            padding: 3px 10px;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+        }
+
+        .file-section {
+            padding: 12px 0;
         }
 
         .score-grid {
@@ -221,7 +308,7 @@
         }
 
         .hidden {
-            display: none;
+            display: none !important;
         }
 
         .nav-btns {
@@ -229,6 +316,17 @@
             gap: 8px;
             justify-content: center;
             margin-top: 16px;
+        }
+
+        select {
+            width: 100%;
+            background: #0f1117;
+            border: 1px solid #2a2d3a;
+            border-radius: 8px;
+            padding: 10px;
+            color: #e0e0e0;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
         }
     </style>
 </head>
@@ -253,32 +351,61 @@
             <div id="categoryBadge" class="category-badge"></div>
             <div class="question-box" id="questionText"></div>
 
-            <div class="record-section">
-                <div style="margin-bottom:16px; text-align:left;">
-                    <label style="font-size:0.85rem; color:#888; display:block; margin-bottom:6px;">🎙️ 마이크 선택</label>
-                    <select id="micSelect"
-                        style="width:100%; background:#0f1117; border:1px solid #2a2d3a; border-radius:8px; padding:10px; color:#e0e0e0; font-size:0.85rem;">
-                        <option value="">마이크를 선택하세요</option>
-                    </select>
+            <!-- 입력 방식 선택 -->
+            <div id="inputMethodSelect">
+                <p style="font-size:0.85rem; color:#888; margin-bottom:12px;">답변 방식을 선택하세요</p>
+                <div class="input-options">
+                    <div class="option-btn" onclick="selectInputMethod('mic')">
+                        <div class="option-icon">🎙️</div>
+                        <div class="option-label">마이크 녹음</div>
+                        <div class="option-desc">직접 말하며 연습</div>
+                    </div>
+                    <div class="option-btn" onclick="selectInputMethod('file')">
+                        <div class="option-icon">📁</div>
+                        <div class="option-label">파일 업로드</div>
+                        <div class="option-desc">mp3, wav, m4a</div>
+                    </div>
                 </div>
-                <div class="timer hidden" id="timer">00:00</div>
-                <button class="record-btn btn-danger" id="recordBtn" onclick="toggleRecord()">🎙️</button>
-                <br>
-                <p class="status" id="recordStatus">버튼을 눌러 답변 녹음을 시작하세요</p>
-                <div style="margin-top:20px; border-top:1px solid #2a2d3a; padding-top:20px; text-align:left;">
-                    <label style="font-size:0.85rem; color:#888; display:block; margin-bottom:6px;">📁 또는 녹음 파일 직접 업로드
-                        (mp3, wav, m4a)</label>
+            </div>
+
+            <!-- 마이크 섹션 -->
+            <div id="micSection" class="hidden">
+                <div class="back-row">
+                    <button class="btn-ghost" onclick="backToMethodSelect()">← 뒤로</button>
+                    <span style="font-size:0.8rem; color:#666;">마이크 녹음</span>
+                </div>
+                <select id="micSelect"></select>
+                <div class="record-section">
+                    <div class="timer hidden" id="timer">00:00</div>
+                    <canvas id="visualizer" class="hidden"></canvas>
+                    <button class="record-btn btn-danger" id="recordBtn" onclick="toggleRecord()">🎙️</button>
+                    <p class="status" id="recordStatus">버튼을 눌러 답변 녹음을 시작하세요</p>
+                </div>
+                <div id="transcriptSection" class="hidden">
+                    <div class="duration-badge" id="durationBadge">🕐 녹음 시간: --</div>
+                    <div class="transcript-box">
+                        <div class="transcript-label">📝 인식된 텍스트 (수정 가능)</div>
+                        <textarea id="transcriptText" placeholder="Whisper 변환 중..."></textarea>
+                    </div>
+                    <button class="btn-primary" style="width:100%;" onclick="submitTranscript()">이 내용으로 평가받기</button>
+                </div>
+            </div>
+
+            <!-- 파일 섹션 -->
+            <div id="fileSection" class="hidden">
+                <div class="back-row">
+                    <button class="btn-ghost" onclick="backToMethodSelect()">← 뒤로</button>
+                    <span style="font-size:0.8rem; color:#666;">파일 업로드</span>
+                </div>
+                <div class="file-section">
                     <input type="file" id="audioFile" accept="audio/*"
                         style="width:100%; background:#0f1117; border:1px solid #2a2d3a; border-radius:8px; padding:10px; color:#e0e0e0; font-size:0.85rem;">
                     <button class="btn-success" style="margin-top:10px; width:100%;" onclick="submitFileAnswer()">파일로
-                        제출</button>
+                        평가받기</button>
                 </div>
-
             </div>
 
-            <div class="nav-btns">
-                <button class="btn-primary hidden" id="submitBtn" onclick="submitAnswer()">답변 제출</button>
-            </div>
+            <p class="status" id="submitStatus"></p>
         </div>
 
         <!-- 피드백 카드 -->
@@ -320,7 +447,21 @@
     </div>
 
     <script>
-        // 마이크 목록 불러오기
+        const API = 'http://localhost:8000/api/v1';
+        let questions = [];
+        let currentIdx = 0;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
+        let timerInterval = null;
+        let seconds = 0;
+        let currentAudioBlob = null;
+        let mimeType = '';
+        let audioContext = null;
+        let analyser = null;
+        let animationId = null;
+        let recordedDuration = 0;
+
         async function loadMicrophones() {
             try {
                 await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -334,33 +475,14 @@
                     option.textContent = mic.label || `마이크 ${mic.deviceId.slice(0, 8)}`;
                     select.appendChild(option);
                 });
-            } catch (e) {
-                console.error('마이크 목록 불러오기 실패:', e);
-            }
+            } catch (e) { console.error(e); }
         }
-
-        // 페이지 로드 시 마이크 목록 불러오기
         window.addEventListener('load', loadMicrophones);
-
-
-        const API = 'http://localhost:8000/api/v1';
-        let questions = [];
-        let currentIdx = 0;
-        let mediaRecorder = null;
-        let audioChunks = [];
-        let isRecording = false;
-        let timerInterval = null;
-        let seconds = 0;
-        let currentAudioBlob = null;
-        let mimeType = '';
 
         async function startSession() {
             const jobUrl = document.getElementById('jobUrl').value.trim();
             const resumeText = document.getElementById('resumeText').value.trim();
-            if (!jobUrl || !resumeText) {
-                alert('URL과 이력서를 모두 입력해주세요');
-                return;
-            }
+            if (!jobUrl || !resumeText) { alert('URL과 이력서를 모두 입력해주세요'); return; }
             document.getElementById('setupStatus').textContent = '분석 중... (30초 정도 걸려요)';
             try {
                 const res = await fetch(`${API}/sessions`, {
@@ -377,7 +499,6 @@
             }
         }
 
-
         function showQuestion() {
             if (currentIdx >= questions.length) {
                 document.getElementById('questionCard').classList.add('hidden');
@@ -390,44 +511,111 @@
 
             const badge = document.getElementById('categoryBadge');
             badge.textContent = q.category;
-            badge.className = 'category-badge ' + q.category;
+            badge.style.background = q.category === '보유 스킬' ? '#1a3a1a' :
+                q.category === '부족 스킬' ? '#3a1a1a' :
+                    q.category.includes('직무') ? '#1a1a3a' : '#3a3a1a';
+            badge.style.color = q.category === '보유 스킬' ? '#2ecc71' :
+                q.category === '부족 스킬' ? '#e74c3c' :
+                    q.category.includes('직무') ? '#4f6ef7' : '#f39c12';
 
-            document.getElementById('recordStatus').textContent = '버튼을 눌러 답변 녹음을 시작하세요';
-            document.getElementById('submitBtn').classList.add('hidden');
+            document.getElementById('inputMethodSelect').classList.remove('hidden');
+            document.getElementById('micSection').classList.add('hidden');
+            document.getElementById('fileSection').classList.add('hidden');
+            document.getElementById('transcriptSection').classList.add('hidden');
             document.getElementById('feedbackCard').classList.add('hidden');
-            document.getElementById('questionCard').classList.remove('hidden');
+            document.getElementById('recordStatus').textContent = '버튼을 눌러 답변 녹음을 시작하세요';
+            document.getElementById('submitStatus').textContent = '';
             document.getElementById('timer').classList.add('hidden');
+            document.getElementById('visualizer').classList.add('hidden');
             currentAudioBlob = null;
+            seconds = 0;
+            document.getElementById('questionCard').classList.remove('hidden');
         }
 
+        function selectInputMethod(method) {
+            document.getElementById('inputMethodSelect').classList.add('hidden');
+            if (method === 'mic') {
+                document.getElementById('micSection').classList.remove('hidden');
+            } else {
+                document.getElementById('fileSection').classList.remove('hidden');
+            }
+        }
+
+        function backToMethodSelect() {
+            document.getElementById('micSection').classList.add('hidden');
+            document.getElementById('fileSection').classList.add('hidden');
+            document.getElementById('transcriptSection').classList.add('hidden');
+            document.getElementById('inputMethodSelect').classList.remove('hidden');
+            if (isRecording) {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(t => t.stop());
+                isRecording = false;
+                clearInterval(timerInterval);
+                cancelAnimationFrame(animationId);
+                if (audioContext) { audioContext.close(); audioContext = null; }
+                document.getElementById('recordBtn').classList.remove('recording');
+                document.getElementById('recordBtn').textContent = '🎙️';
+            }
+        }
+
+        function drawVisualizer() {
+            const canvas = document.getElementById('visualizer');
+            canvas.width = canvas.offsetWidth || 600;
+            canvas.height = 60;
+            const ctx = canvas.getContext('2d');
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            function draw() {
+                animationId = requestAnimationFrame(draw);
+                analyser.getByteFrequencyData(dataArray);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const barWidth = (canvas.width / bufferLength) * 1.2;
+                let x = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    const barHeight = (dataArray[i] / 255) * canvas.height;
+                    const intensity = dataArray[i] / 255;
+                    ctx.fillStyle = `rgba(${Math.floor(79 + intensity * 100)}, ${Math.floor(110 + intensity * 50)}, 247, 0.85)`;
+                    ctx.beginPath();
+                    ctx.roundRect(x, canvas.height - barHeight, Math.max(barWidth - 1, 1), barHeight, 2);
+                    ctx.fill();
+                    x += barWidth + 1;
+                }
+            }
+            draw();
+        }
 
         async function toggleRecord() {
             if (!isRecording) {
-                // 녹음 시작
                 const deviceId = document.getElementById('micSelect').value;
                 const stream = await navigator.mediaDevices.getUserMedia({
                     audio: deviceId ? { deviceId: { exact: deviceId } } : true
                 });
 
-                const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-                    ? 'audio/webm;codecs=opus'
-                    : MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')
-                        ? 'audio/ogg;codecs=opus'
-                        : 'audio/webm';
+                mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' :
+                    MediaRecorder.isTypeSupported('audio/ogg;codecs=opus') ? 'audio/ogg;codecs=opus' : 'audio/webm';
 
-                mediaRecorder = new MediaRecorder(stream, {
-                    mimeType,
-                    audioBitsPerSecond: 128000
-                });
+                mediaRecorder = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 128000 });
                 audioChunks = [];
                 mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                mediaRecorder.onstop = () => {
+                mediaRecorder.onstop = async () => {
                     currentAudioBlob = new Blob(audioChunks, { type: mimeType });
-                    document.getElementById('submitBtn').classList.remove('hidden');
+                    recordedDuration = seconds;
+                    await processRecording();
                 };
                 mediaRecorder.start();
                 isRecording = true;
                 seconds = 0;
+
+                // 음파 시각화 — source 정의 후 analyser에 연결
+                audioContext = new AudioContext();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 128;
+                const source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+
+                document.getElementById('visualizer').classList.remove('hidden');
+                drawVisualizer();
 
                 document.getElementById('recordBtn').classList.add('recording');
                 document.getElementById('recordBtn').textContent = '⏹️';
@@ -441,27 +629,24 @@
                     document.getElementById('timer').textContent = `${m}:${s}`;
                 }, 1000);
             } else {
-                // 녹음 중지
                 mediaRecorder.stop();
                 mediaRecorder.stream.getTracks().forEach(t => t.stop());
                 isRecording = false;
                 clearInterval(timerInterval);
+                cancelAnimationFrame(animationId);
+                if (audioContext) { audioContext.close(); audioContext = null; }
 
                 document.getElementById('recordBtn').classList.remove('recording');
                 document.getElementById('recordBtn').textContent = '🎙️';
-                document.getElementById('recordStatus').textContent = '녹음 완료! 제출 버튼을 눌러주세요';
+                document.getElementById('recordStatus').textContent = '변환 중...';
+                document.getElementById('timer').classList.add('hidden');
+                document.getElementById('visualizer').classList.add('hidden');
             }
         }
 
-
-        async function submitAnswer() {
-            if (!currentAudioBlob) return;
-            document.getElementById('recordStatus').textContent = '분석 중...';
-            document.getElementById('submitBtn').disabled = true;
-
+        async function processRecording() {
             const formData = new FormData();
             formData.append('audio', currentAudioBlob, 'answer.webm');
-
             try {
                 const q = questions[currentIdx];
                 const res = await fetch(`${API}/questions/${q.id}/answers`, {
@@ -469,18 +654,64 @@
                     body: formData
                 });
                 const data = await res.json();
-
-                // 피드백 요청
-                const feedbackRes = await fetch(`${API}/answers/${data.answer_id}/feedback`);
-                const feedback = await feedbackRes.json();
-
-                showFeedback(feedback);
+                const m = String(Math.floor(recordedDuration / 60)).padStart(2, '0');
+                const s = String(recordedDuration % 60).padStart(2, '0');
+                document.getElementById('durationBadge').textContent = `🕐 녹음 시간: ${m}:${s}`;
+                document.getElementById('transcriptText').value = data.answer_text;
+                document.getElementById('transcriptSection').classList.remove('hidden');
+                document.getElementById('recordStatus').textContent = '텍스트를 확인하고 수정 후 평가받으세요';
+                document.getElementById('transcriptSection').dataset.answerId = data.answer_id;
             } catch (e) {
                 document.getElementById('recordStatus').textContent = '오류: ' + e.message;
-                document.getElementById('submitBtn').disabled = false;
             }
         }
 
+        async function submitTranscript() {
+            const editedText = document.getElementById('transcriptText').value.trim();
+            if (!editedText) { alert('텍스트를 입력해주세요'); return; }
+            document.getElementById('submitStatus').textContent = '평가 중...';
+            try {
+                const q = questions[currentIdx];
+                const res = await fetch(`${API}/evaluate-text`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        question_id: q.id,
+                        answer_text: editedText,
+                        duration_seconds: recordedDuration
+                    })
+                });
+                const feedback = await res.json();
+                showFeedback(feedback);
+            } catch (e) {
+                document.getElementById('submitStatus').textContent = '오류: ' + e.message;
+            }
+        }
+
+        async function submitFileAnswer() {
+            const fileInput = document.getElementById('audioFile');
+            if (!fileInput.files[0]) { alert('파일을 선택해주세요'); return; }
+            document.getElementById('submitStatus').textContent = '분석 중...';
+            const formData = new FormData();
+            formData.append('audio', fileInput.files[0]);
+            try {
+                const q = questions[currentIdx];
+                const res = await fetch(`${API}/questions/${q.id}/answers`, { method: 'POST', body: formData });
+                const data = await res.json();
+                const feedbackRes = await fetch(`${API}/answers/${data.answer_id}/feedback`);
+                const feedback = await feedbackRes.json();
+                showFeedback(feedback);
+            } catch (e) {
+                document.getElementById('submitStatus').textContent = '오류: ' + e.message;
+            }
+        }
+
+        function calcTimeScore(sec) {
+            if (sec < 30) return 1;
+            if (sec < 60) return 3;
+            if (sec <= 120) return 5;
+            return 2;
+        }
 
         function showFeedback(feedback) {
             document.getElementById('answerText').textContent = `"${feedback.answer_text}"`;
@@ -490,40 +721,13 @@
             document.getElementById('totalScore').textContent = feedback.total_score;
             document.getElementById('feedbackText').textContent = `💬 ${feedback.feedback}`;
             document.getElementById('feedbackCard').classList.remove('hidden');
-            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('submitStatus').textContent = '';
         }
-
 
         function nextQuestion() {
             currentIdx++;
             document.getElementById('feedbackCard').classList.add('hidden');
             showQuestion();
-        }
-        async function submitFileAnswer() {
-            const fileInput = document.getElementById('audioFile');
-            if (!fileInput.files[0]) {
-                alert('파일을 선택해주세요');
-                return;
-            }
-            document.getElementById('recordStatus').textContent = '분석 중...';
-
-            const formData = new FormData();
-            formData.append('audio', fileInput.files[0]);
-
-            try {
-                const q = questions[currentIdx];
-                const res = await fetch(`${API}/questions/${q.id}/answers`, {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await res.json();
-
-                const feedbackRes = await fetch(`${API}/answers/${data.answer_id}/feedback`);
-                const feedback = await feedbackRes.json();
-                showFeedback(feedback);
-            } catch (e) {
-                document.getElementById('recordStatus').textContent = '오류: ' + e.message;
-            }
         }
     </script>
 </body>
