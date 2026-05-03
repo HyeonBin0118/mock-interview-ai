@@ -1,10 +1,13 @@
 import os
 import time
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models
 from app.services.evaluation import transcribe_audio, evaluate_answer
+from app.schemas import AnswerWithEval
+from pydantic import BaseModel
+from typing import List
 
 router = APIRouter()
 
@@ -18,29 +21,24 @@ def submit_answer(
     audio: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
-    # 질문 존재 확인
     question = db.query(models.Question).filter(
         models.Question.id == question_id
     ).first()
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
 
-    # 음성 파일 저장
     file_path = f"{UPLOAD_DIR}/{question_id}_{int(time.time())}_{audio.filename}"
     with open(file_path, "wb") as f:
         f.write(audio.file.read())
 
-    # Whisper로 텍스트 변환
     try:
         answer_text = transcribe_audio(file_path)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Whisper 변환 실패: {e}")
 
-    # 답변 시간 계산 (파일 크기 기반 추정 — 실제 음성 길이는 Phase 3에서 정확히 측정)
     file_size = os.path.getsize(file_path)
-    duration_seconds = file_size / 16000  # 대략적인 추정
+    duration_seconds = file_size / 16000
 
-    # DB 저장
     answer = models.Answer(
         question_id=question_id,
         answer_text=answer_text,
@@ -67,7 +65,6 @@ def get_feedback(answer_id: int, db: Session = Depends(get_db)):
     if not answer:
         raise HTTPException(status_code=404, detail="Answer not found")
 
-    # 이미 평가된 경우 바로 반환
     if answer.evaluation:
         ev = answer.evaluation
         return {
@@ -80,7 +77,6 @@ def get_feedback(answer_id: int, db: Session = Depends(get_db)):
             "feedback": ev.feedback,
         }
 
-    # GPT 평가 실행
     question = db.query(models.Question).filter(
         models.Question.id == answer.question_id
     ).first()
@@ -94,7 +90,6 @@ def get_feedback(answer_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"평가 실패: {e}")
 
-    # 평가 결과 DB 저장
     evaluation = models.EvaluationResult(
         answer_id=answer_id,
         logic_score=result.get("logic_score"),
@@ -115,12 +110,13 @@ def get_feedback(answer_id: int, db: Session = Depends(get_db)):
         "total_score": result.get("total_score"),
         "feedback": result.get("feedback"),
     }
-from pydantic import BaseModel
+
 
 class EvaluateTextRequest(BaseModel):
     question_id: int
     answer_text: str
     duration_seconds: float = 60.0
+
 
 @router.post("/evaluate-text")
 def evaluate_text(body: EvaluateTextRequest, db: Session = Depends(get_db)):
@@ -146,3 +142,13 @@ def evaluate_text(body: EvaluateTextRequest, db: Session = Depends(get_db)):
         "total_score": result.get("total_score"),
         "feedback": result.get("feedback"),
     }
+
+
+@router.get("/questions/{question_id}/answers", response_model=List[AnswerWithEval])
+def get_question_answers(question_id: int, db: Session = Depends(get_db)):
+    question = db.query(models.Question).filter(
+        models.Question.id == question_id
+    ).first()
+    if not question:
+        raise HTTPException(status_code=404, detail="Question not found")
+    return question.answers
